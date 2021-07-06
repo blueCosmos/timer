@@ -184,7 +184,6 @@ async function calculateFibonaccisUpTo(nth: number): Promise<void> {
     }
 
     thousandthTerm = result;
-    console.log(count);
     resolve();
   };
 

@@ -6,7 +6,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "dev": "npx tsc-watch",
-    "start": "node build/index.js"
+    "start": "tsc && node build/index.js"
   },
   "author": "",
   "license": "ISC",

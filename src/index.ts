@@ -1,16 +1,14 @@
 const prompts = require('prompts');
-const _array = require('lodash/array');
-const datefns = require('date-fns');
 
 import { timer } from 'rxjs';
+import { NumberContainer } from './core/definitions';
 
-let enteredFirstNumber: boolean = false;
 let frequencyInMilliseconds: number;
 let lastLoggedTime: number;
 let timeLogged: number;
 let timedSubscription: any;
+let thousandthTerm: number;
 let paused = false;
-let numberDisplayInQueue = [];
 
 const questions = [
   {
@@ -21,41 +19,50 @@ const questions = [
   {
     type: 'text',
     name: 'number-frequency',
-    message: ''
+    message: 'Please enter the first number'
+  },
+  {
+    type: 'text',
+    name: 'number-frequency',
+    message: 'Please enter the next number'
   }
 ];
 
-const tableOfNumbers:Array<NumberContainer> = [];
+const listOfNumbers:Array<NumberContainer> = [];
+const setOfFibonaccis:Set<number> = new Set();
 
 (async () => {
-  let response = await prompts(questions[0]);
-  const { 'number-frequency': frequencyInSeconds }= response;
-  lastLoggedTime = Date.now();
+  try {
+    await calculateFibonaccisUpTo(1000);
+    let response = await prompts(questions[0]);
+    const { 'number-frequency': frequencyInSeconds } = response;
+    
+    if(!isNaN(frequencyInSeconds)) {
+      frequencyInMilliseconds = frequencyInSeconds * 1000;
+      startEmittingNumbers(frequencyInMilliseconds, frequencyInMilliseconds);
+      response = await prompts(questions[1]);
+      processResponse(response);
+    }
   
-  if(!isNaN(frequencyInSeconds)) {
-    frequencyInMilliseconds = frequencyInSeconds * 1000;
-    startEmittingNumbers(frequencyInMilliseconds, frequencyInMilliseconds);
+    // Loop numbers
+    while (response['number-frequency'] !== 'quit') {
+      response = await prompts(questions[2]);
+      lastLoggedTime = Date.now();
+      processResponse(response);
+    }
+  } catch (erro) {
+    console.error(erro);
   }
-
-  // Loop numbers
-  while (response['number-frequency'] !== 'quit') {
-    questions[1].message = returnMsg(enteredFirstNumber);
-    response = await prompts(questions[1]);
-    enteredFirstNumber = true;
-    processResponse(response);
-    console.log('Finished', response);
-  }
-  console.log('quitted')
-
-
 })();
 
+/****
+ * FUNCTIONS 
+ */
 function processResponse({ 'number-frequency': response}: any) {
-  console.log('Processing response', response);
   switch (response) {
     case 'halt':
       if (paused) {
-        console.log('Already paused!');
+        console.warn('Already paused!');
       } else {
         onPause();
       }
@@ -63,7 +70,7 @@ function processResponse({ 'number-frequency': response}: any) {
       break;
     case 'resume':
       if (!paused) {
-        console.log('Not paused. Timer is unaffected');
+        console.warn('Not paused. Timer is unaffected');
       } else {
         onResume();
       }
@@ -75,37 +82,31 @@ function processResponse({ 'number-frequency': response}: any) {
       }
       break;
     default:
-      if (!isNaN(response)) {
-        rememberNumber(response['number-frequency']);
+      if (isNaN(response)) {
+        throw new Error('Invalid number!');
       }
+      rememberNumber(response);
 
   }
 }
 
-function rememberNumber(newNumber: string | number) {
 
-  if (notFibonacci(newNumber)) {
-    addOrUpdateEntry(newNumber);
-  } else {
-    console.log(newNumber);
+function rememberNumber(newNumber: number): void {
+  addOrUpdateEntry(newNumber);
+  if (isFibonacci(newNumber)) {
+    console.log('FIB');
   }
-
 }
 
-function returnMsg(firstNumberEntered: boolean): string {
-  return `Please enter the ${firstNumberEntered ? 'next' : 'first'} number`;
-}
-
-function notFibonacci(newNumber: number | string) {
-  return true;
+function isFibonacci(newNumber: number): boolean {
+  return setOfFibonaccis.has(+newNumber);
 }
 
 function addOrUpdateEntry(newNumber: any): void {
   // Get number
-  const foundNumber: NumberContainer | undefined = tableOfNumbers.find(el => el.num === newNumber);
-
+  const foundNumber: NumberContainer | undefined = listOfNumbers.find(el => el.num === newNumber);
   if(!foundNumber) {
-    tableOfNumbers.push(<NumberContainer>{ num: newNumber, total: 1});
+    listOfNumbers.push(<NumberContainer>{ num: newNumber, total: 1});
   } else {
     foundNumber.total++;
   }
@@ -116,11 +117,12 @@ function startEmittingNumbers(firstTimeFrequency: number, secondTimeFrequency: n
   if (timedSubscription) {
     timedSubscription.unsubscribe();
   }
-  timedSubscription = timer(firstTimeFrequency, secondTimeFrequency).subscribe((val: number) => console.log(firstTimeFrequency));
+  timedSubscription = timer(firstTimeFrequency, secondTimeFrequency).subscribe((val: number) => emitNumbers());
 }
 
 function onPause() {
   paused = true;
+  console.log('\ntimer halted');
   timeLogged = Date.now() - lastLoggedTime;
 
   if (timedSubscription) {
@@ -130,11 +132,11 @@ function onPause() {
 
 function onResume() {
   paused = false;
+  console.log('\ntimer resumed');
   lastLoggedTime = Date.now();
 
   // Set a one-time timeout for (frequencyInMilliseconds - timeLogged) + (lastLoggedTime)
   const timeDifference = (frequencyInMilliseconds - timeLogged);
-  console.log(timeDifference);
 
   if (timeDifference > 0) {
     startEmittingNumbers(timeDifference, frequencyInMilliseconds);
@@ -142,18 +144,50 @@ function onResume() {
 }
 
 function emitNumbers() {
-  console.log('emitting numbers');
-  tableOfNumbers.sort((el1, el2) => el2.total - el1.total);
-  let msg: string = '';
-
-  for(let i = 0; i < tableOfNumbers.length; i++) {
-    msg = `${msg}, ${tableOfNumbers[i].num}:${tableOfNumbers[i].total}`;
+  if (listOfNumbers.length === 0) {
+    return;
   }
 
-  console.log(msg);
+  listOfNumbers.sort((el1, el2) => el2.total - el1.total);
+  let msg: string = '';
+
+  for(let i = 0; i < listOfNumbers.length; i++) {
+    msg = `${msg}, ${listOfNumbers[i].num}:${listOfNumbers[i].total}`.replace(/^,\s/,'');
+  }
+
+  console.log(`\r${msg}`);
+  timeLogged = Date.now();
 }
 
-interface NumberContainer {
-  num: string | number;
-  total: number;
+/******
+ * ASYNC FUNCTIONS
+ */
+async function calculateFibonaccisUpTo(nth: number): Promise<void> {
+  const calculations = (resolve,reject) => {
+    if(nth > 1000) {
+      throw new Error('Cannot use numbers past 1000th fibonacci');
+    }
+
+    let prev = 1;
+    let current = 2;
+    let count = 1;
+    let result = 0;
+  
+    setOfFibonaccis.add(0), setOfFibonaccis.add(1), setOfFibonaccis.add(2);
+    
+    while(count <= nth) {
+      result = prev + current;
+      prev = current;
+      current = result;
+      setOfFibonaccis.add(result);
+      count++;
+    }
+
+    thousandthTerm = result;
+    console.log(count);
+    resolve();
+  };
+
+  return new Promise(calculations);
 }
+

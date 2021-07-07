@@ -27,6 +27,7 @@ To run, `yarn start`.
 ## Running as a Docker
 
 To build the Docker image, do `docker build . -t timer:latest`.
+
 To run the Docker image, do `docker run -it -p 30000:8080 timer:latest`.
 
 ## Testing

@@ -4,8 +4,8 @@ import { NumbersProcessor } from './numbers-processor';
 export class Processor {
   private timedSubscription?: Subscription;
   private _frequencyInMilliseconds: number = 0;
-  private _lastLoggedTime: number = 0;
-  private _timeLogged: number = 0;
+  private _timeLastEmitted: number = 0;
+  private _timeElapsedSinceLastEmit: number = 0;
   private _paused: boolean = false;
   private _frequencyToRefreshInSeconds: number = 0;
 
@@ -22,16 +22,20 @@ export class Processor {
     return this._frequencyInMilliseconds;
   }
 
-  public get lastLoggedTime() {
-    return this._lastLoggedTime;
+  public get timeLastEmitted() {
+    return this._timeLastEmitted;
   }
 
   public get paused() {
     return this._paused;
   }
 
-  public get timeLogged() {
-    return this._timeLogged;
+  public get timeElapsedSinceLastEmit() {
+    return this._timeElapsedSinceLastEmit;
+  }
+
+  public get timerSubscriptionExists() {
+    return this.timedSubscription !== undefined;
   }
   
   constructor(private numbersProcessor: NumbersProcessor,
@@ -39,33 +43,7 @@ export class Processor {
     this.frequencyToRefreshInSeconds = frequencyToRefreshInSeconds;
   }
 
-  public onResume(): void {
-    this._paused = false;
-    console.log('\ntimer resumed');
-    this._lastLoggedTime = Date.now();
-  
-    // Set a one-time timeout for (frequencyInMilliseconds - timeLogged) + (lastLoggedTime)
-    const timeDifference = (this._frequencyInMilliseconds - this._timeLogged);
-  
-    if (timeDifference > 0) {
-      this.emitNumbers(timeDifference, this._frequencyInMilliseconds);
-      this._timeLogged = Date.now();
-    }
-  }
-
-  public onPause(): void {
-    this._paused = true;
-    console.log('\ntimer halted');
-    this._timeLogged = Date.now() - this._lastLoggedTime;
-  
-    if (this.timedSubscription) {
-      this.timedSubscription.unsubscribe();
-    }
-  }
-
   public processResponse(response: any) {
-    this._lastLoggedTime = Date.now();
-
     switch (response) {
       case 'halt':
         if (this._paused) {
@@ -92,7 +70,8 @@ export class Processor {
         if (isNaN(response)) {
           throw new Error('Invalid number!');
         }
-        this.numbersProcessor.rememberNumber(+response);  
+        console.log('calling');
+        this.numbersProcessor.processNumber(+response);  
     }   
   }
 
@@ -100,12 +79,41 @@ export class Processor {
     this.emitNumbers(this._frequencyInMilliseconds, this._frequencyInMilliseconds);
   }
 
+  /*****
+   * PRIVATE METHODS
+   */
   private emitNumbers(firstTimeFrequency: number, secondTimeFrequency: number): void {
     if (this.timedSubscription) {
       this.timedSubscription.unsubscribe();
     }
     this.timedSubscription = timer(firstTimeFrequency, secondTimeFrequency)
-                              .subscribe((val: number) => this.numbersProcessor.emitNumbers());
+                              .subscribe((val: number) => {
+                                this.numbersProcessor.emitNumbers();
+                                this._timeLastEmitted = Date.now();
+                              });
+  }
+
+  private onResume(): void {
+    this._paused = false;
+    console.log('\ntimer resumed');
+  
+    let timeDifference = this._frequencyInMilliseconds >= this._timeElapsedSinceLastEmit
+            ? (this._frequencyInMilliseconds - this._timeElapsedSinceLastEmit) : 0;
+
+    this.emitNumbers(timeDifference, this._frequencyInMilliseconds);
+  }
+
+  private onPause(): void {
+    this._paused = true;
+    console.log('\ntimer halted');
+
+    if (this._timeLastEmitted !== 0) {
+      this._timeElapsedSinceLastEmit = Date.now() - this._timeLastEmitted;
+    }
+  
+    if (this.timedSubscription) {
+      this.timedSubscription.unsubscribe();
+    }
   }
 
 }

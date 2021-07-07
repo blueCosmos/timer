@@ -8,7 +8,7 @@ export class NumbersProcessor {
 
   }
 
-  public rememberNumber(newNumber: number): void {
+  public processNumber(newNumber: number): void {
     this.addOrUpdateEntry(newNumber);
     if (this.fibonacciProcessor.isFibonacci(newNumber)) {
       console.log('FIB');
@@ -19,15 +19,19 @@ export class NumbersProcessor {
     if (this.listOfNumbers.length === 0) {
       return;
     }
-  
+    
+    console.log(`\r${this.getNumbersInDescendingTotalOrder()}`);
+  }
+
+  private getNumbersInDescendingTotalOrder(): string {
     this.listOfNumbers.sort((el1, el2) => el2.total - el1.total);
     let msg: string = '';
   
     for(let i = 0; i < this.listOfNumbers.length; i++) {
       msg = `${msg}, ${this.listOfNumbers[i].num}:${this.listOfNumbers[i].total}`.replace(/^,\s/,'');
     }
-  
-    console.log(`\r${msg}`);
+
+    return msg;
   }
 
   private addOrUpdateEntry(newNumber: number): void {

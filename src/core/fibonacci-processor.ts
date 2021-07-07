@@ -20,6 +20,9 @@ export class FibonacciProcessor {
    * ASYNCHRONOUS FUNCTIONS
    */
   public async calculateFibonaccisUpTo(nth: number): Promise<void> {
+    // Empty existing set
+    this.setOfFibonaccis.clear();
+
     const calculations = (resolve,reject) => {
       if(nth > this.nthTermToLimit) {
         throw new Error('Cannot use numbers past 1000th fibonacci');
@@ -27,12 +30,12 @@ export class FibonacciProcessor {
   
       let prev = 1;
       let current = 2;
-      let count = 1;
+      let count = 3;
       let result = 0;
     
       this.setOfFibonaccis.add(0), this.setOfFibonaccis.add(1), this.setOfFibonaccis.add(2);
       
-      while(count <= nth) {
+      while(count < nth) {
         result = prev + current;
         prev = current;
         current = result;

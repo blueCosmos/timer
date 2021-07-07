@@ -24,6 +24,11 @@ To install, do `yarn install`.
 
 To run, `yarn start`.
 
+# Running as a Docker
+
+To build the Docker image, do `docker build . -t timer:latest`.
+To run the Docker image, do `docker run -it -p 30000:8080 timer:latest`.
+
 ## Testing
 
 To test, do `yarn test`.  If you want to test in watch mode, do `yarn test:watch`.

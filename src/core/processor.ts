@@ -70,7 +70,6 @@ export class Processor {
         if (isNaN(response)) {
           throw new Error('Invalid number!');
         }
-        console.log('calling');
         this.numbersProcessor.processNumber(+response);  
     }   
   }

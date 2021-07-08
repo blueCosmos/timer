@@ -1,9 +1,17 @@
 import { NumbersProcessor } from './numbers-processor';
+import { UserInterface } from '../ui/user-interface';
 
 const mockFibonacciProcessor = require('./fibonacci-processor');
+const mockUi = require('../ui/user-interface');
 
 jest.mock('./fibonacci-processor', () => ({
   isFibonacci: jest.fn()
+}));
+
+jest.mock('../ui/user-interface', () => ({
+  log: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn()
 }));
 
 describe('NumbersProcessor', () => {
@@ -11,7 +19,7 @@ describe('NumbersProcessor', () => {
   let cut;
   
   beforeEach(() => {
-    cut = new NumbersProcessor(mockFibonacciProcessor);
+    cut = new NumbersProcessor(mockFibonacciProcessor, mockUi);
   });
 
   describe('processNumber()', () => {

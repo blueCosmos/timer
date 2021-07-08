@@ -1,4 +1,5 @@
 import { timer, Subscription } from 'rxjs';
+import { UserInterface } from '../ui/user-interface';
 import { NumbersProcessor } from './numbers-processor';
 
 export class Processor {
@@ -39,6 +40,7 @@ export class Processor {
   }
   
   constructor(private numbersProcessor: NumbersProcessor,
+              private ui: UserInterface,
               frequencyToRefreshInSeconds: number = 0) {
     this.frequencyToRefreshInSeconds = frequencyToRefreshInSeconds;
   }
@@ -47,7 +49,7 @@ export class Processor {
     switch (response) {
       case 'halt':
         if (this._paused) {
-          console.warn('Already paused!');
+          this.ui.warn('Already paused!');
         } else {
           this.onPause();
         }
@@ -55,7 +57,7 @@ export class Processor {
         break;
       case 'resume':
         if (!this._paused) {
-          console.warn('Not paused. Timer is unaffected');
+          this.ui.warn('Not paused. Timer is unaffected');
         } else {
           this.onResume();
         }
@@ -65,6 +67,8 @@ export class Processor {
         if (this.timedSubscription) {
           this.timedSubscription.unsubscribe();
         }
+        this.numbersProcessor.emitNumbers();
+        this.ui.log('\nThanks for playing, press any key to exit.');
         break;
       default:
         if (isNaN(response)) {
@@ -94,7 +98,7 @@ export class Processor {
 
   private onResume(): void {
     this._paused = false;
-    console.log('\ntimer resumed');
+    this.ui.log('\ntimer resumed');
   
     let timeDifference = this._frequencyInMilliseconds >= this._timeElapsedSinceLastEmit
             ? (this._frequencyInMilliseconds - this._timeElapsedSinceLastEmit) : 0;
@@ -104,7 +108,7 @@ export class Processor {
 
   private onPause(): void {
     this._paused = true;
-    console.log('\ntimer halted');
+    this.ui.log('\ntimer halted');
 
     if (this._timeLastEmitted !== 0) {
       this._timeElapsedSinceLastEmit = Date.now() - this._timeLastEmitted;

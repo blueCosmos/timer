@@ -1,17 +1,19 @@
 import { NumberContainer } from '../definitions/definitions';
+import { UserInterface } from '../ui/user-interface';
 import {FibonacciProcessor } from './fibonacci-processor';
 
 export class NumbersProcessor {
   private listOfNumbers: Array<NumberContainer> = [];
 
-  constructor(private fibonacciProcessor: FibonacciProcessor) {
+  constructor(private fibonacciProcessor: FibonacciProcessor,
+              private ui: UserInterface) {
 
   }
 
   public processNumber(newNumber: number): void {
     this.addOrUpdateEntry(newNumber);
     if (this.fibonacciProcessor.isFibonacci(newNumber)) {
-      console.log('FIB');
+      this.ui.log('FIB');
     }
   }
 
@@ -20,7 +22,7 @@ export class NumbersProcessor {
       return;
     }
     
-    console.log(`\r${this.getNumbersInDescendingTotalOrder()}`);
+    this.ui.log(`\r${this.getNumbersInDescendingTotalOrder()}`);
   }
 
   private getNumbersInDescendingTotalOrder(): string {

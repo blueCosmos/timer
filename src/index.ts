@@ -3,6 +3,7 @@ const prompts = require('prompts');
 import { Processor } from './core/processors/processor';
 import { NumbersProcessor } from './core/processors/numbers-processor';
 import { FibonacciProcessor } from './core/processors/fibonacci-processor';
+import { CommandLineUserInterface } from './core/ui/command-line';
 
 const questions = [
   {
@@ -23,9 +24,10 @@ const questions = [
 ];
 
 (async () => {
+  const ui: CommandLineUserInterface = new CommandLineUserInterface();
   const fibonacciProcessor = new FibonacciProcessor(1000);
-  const numbersProcessor = new NumbersProcessor(fibonacciProcessor);
-  const processor = new Processor(numbersProcessor);
+  const numbersProcessor = new NumbersProcessor(fibonacciProcessor, ui);
+  const processor = new Processor(numbersProcessor, ui);
 
   try {
     let response = await prompts(questions[0]);

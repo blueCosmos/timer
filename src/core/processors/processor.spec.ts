@@ -1,17 +1,25 @@
 import { Processor } from './processor';
+import { UserInterface } from '../ui/user-interface';
 
 const mockNumbersProcessor = require('./numbers-processor');
+const mockUi = require('../ui/user-interface');
 
 jest.mock('./numbers-processor', () => ({
   emitNumbers: jest.fn(),
   processNumber: jest.fn()
 }));
 
+jest.mock('../ui/user-interface', () => ({
+  log: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn()
+}));
+
 let cliProcessor;
 
 describe('Processor', () => {
   beforeEach(() => {
-    cliProcessor = new Processor(mockNumbersProcessor, 1);
+    cliProcessor = new Processor(mockNumbersProcessor, mockUi, 1);
   });
 
   describe('onResume()', () => {
@@ -26,7 +34,11 @@ describe('Processor', () => {
   
       it('should set pause to false', () => {
         expect(cliProcessor.paused).toBeFalsy();
-      })
+      });
+
+      it('should display the text "timer resumed"', () => {
+        expect(mockUi.log).toHaveBeenCalledWith('\ntimer resumed');
+      });
   
       it('should call emitNumbers', () => {
         setTimeout(() => {
@@ -50,6 +62,10 @@ describe('Processor', () => {
 
     it('should set paused to true', () => {
       expect(cliProcessor.paused).toBeTruthy();
+    });
+
+    it('should display the text "timer halted"', () => {
+      expect(mockUi.log).toHaveBeenCalledWith('\ntimer halted');
     });
 
     describe('when the processor has never emitted numbers', () => {
@@ -126,6 +142,15 @@ describe('Processor', () => {
       it('should unsubscribe any subscriptions', () => {
         expect(cliProcessor.timerSubscriptionExists).toBeFalsy();
       });
+
+      it('should emit numbers one last time', () => {
+        expect(mockNumbersProcessor.emitNumbers).toHaveBeenCalled();
+      });
+
+      it('should display a farewell message', () => {
+        expect(mockUi.log).toHaveBeenLastCalledWith('\nThanks for playing, press any key to exit.');
+      });
+
     });
 
     describe('when called with any number', () => {

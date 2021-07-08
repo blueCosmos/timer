@@ -1,8 +1,8 @@
 const prompts = require('prompts');
 
-import { Processor } from './core/processor';
-import { NumbersProcessor } from './core/numbers-processor';
-import { FibonacciProcessor } from './core/fibonacci-processor';
+import { Processor } from './core/processors/processor';
+import { NumbersProcessor } from './core/processors/numbers-processor';
+import { FibonacciProcessor } from './core/processors/fibonacci-processor';
 
 const questions = [
   {

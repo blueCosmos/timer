@@ -1,4 +1,4 @@
-import { NumberContainer } from './definitions';
+import { NumberContainer } from '../definitions/definitions';
 import {FibonacciProcessor } from './fibonacci-processor';
 
 export class NumbersProcessor {
